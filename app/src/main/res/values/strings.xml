@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Step-O-Meter</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="splash_text">Step-O-Meter</string>
+    <string name="txt_user_registration">User Registration</string>
+    <string name="hint_enter_name">Enter Name</string>
+    <string name="hint_height">Height (ft.)</string>
+    <string name="hint_weight">Weight (kg.)</string>
+    <string name="hint_date_of_birth">Date Of Birth</string>
+    <string name="radio_male_txt">Male</string>
+    <string name="radio_female_txt">Female</string>
+    <string name="btn_register_txt">REGISTER</string>
+    <string name="name_length_error_msg">Name should be 3-30 characters long !!</string>
+    <string name="empty_name_error_msg">Name cannot be empty !!</string>
+    <string name="invalid_weight_error_msg">Invalid Weight !!</string>
+    <string name="empty_weight_error_msg">Empty Weight !!</string>
+    <string name="empty_dob_error_msg">Date of Birth cannot be empty !!</string>
+    <string name="invalide_height_error_msg">Invalid Height !!</string>
+    <string name="empty_height_error_msg">Empty Height !!</string>
+    <string name="enpty_gender_msg">Please Select Gender !!</string>
+</resources>
