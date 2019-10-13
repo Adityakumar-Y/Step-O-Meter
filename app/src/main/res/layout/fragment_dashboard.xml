@@ -18,7 +18,7 @@
                 android:layout_height="match_parent"
                 android:layout_margin="16dp">
                 <TextView
-                    android:id="@+id/tvSteps"
+                    android:id="@+id/tvStepsData"
                     android:gravity="center"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -28,7 +28,7 @@
 
                 <TextView
                     android:id="@+id/tvStepsLabel"
-                    android:layout_below="@+id/tvSteps"
+                    android:layout_below="@+id/tvStepsData"
                     android:layout_width="match_parent"
                     android:text="@string/total_steps_label"
                     android:layout_marginTop="4dp"
@@ -36,13 +36,190 @@
                     android:gravity="center"
                     android:layout_height="wrap_content"/>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/gridRecord"
+                <LinearLayout
+                    android:id="@+id/llRecordContainer1"
                     android:layout_below="@+id/tvStepsLabel"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="24dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:numColumns="2"/>
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_height="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="8dp"
+                            android:layout_margin="16dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/tvDistanceData"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="16dp"
+                                        android:textSize="32sp"
+                                        android:text="0.00" />
+
+                                    <View
+                                        android:layout_marginTop="4dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="@android:color/darker_gray"/>
+
+                                    <TextView
+                                        android:id="@+id/tvStepsText"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="8dp"
+                                        android:textSize="16sp"
+                                        android:text="@string/distance_label" />
+                                </LinearLayout>
+                            </FrameLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_height="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="8dp"
+                            android:layout_margin="16dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/tvCaloriesData"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="16dp"
+                                        android:textSize="32sp"
+                                        android:text="0.00" />
+
+                                    <View
+                                        android:layout_marginTop="4dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="@android:color/darker_gray"/>
+
+                                    <TextView
+                                        android:id="@+id/tvCaloriesLabel"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="8dp"
+                                        android:textSize="16sp"
+                                        android:text="@string/calories_label" />
+                                </LinearLayout>
+                            </FrameLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_height="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="8dp"
+                            android:layout_margin="16dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/tvSpeedData"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="16dp"
+                                        android:textSize="32sp"
+                                        android:text="0.00" />
+
+                                    <View
+                                        android:layout_marginTop="4dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="@android:color/darker_gray"/>
+
+                                    <TextView
+                                        android:id="@+id/tvSpeedLabel"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="8dp"
+                                        android:textSize="16sp"
+                                        android:text="@string/speed_label" />
+                                </LinearLayout>
+                            </FrameLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_height="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:elevation="8dp"
+                            app:cardCornerRadius="8dp"
+                            android:layout_margin="16dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/tvFloorData"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="16dp"
+                                        android:textSize="32sp"
+                                        android:text="0.00" />
+
+                                    <View
+                                        android:layout_marginTop="4dp"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="@android:color/darker_gray"/>
+
+                                    <TextView
+                                        android:id="@+id/tvFloorsLabel"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:padding="8dp"
+                                        android:textSize="16sp"
+                                        android:text="@string/floors_label" />
+                                </LinearLayout>
+                            </FrameLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                </LinearLayout>
 
             </RelativeLayout>
     </RelativeLayout>
