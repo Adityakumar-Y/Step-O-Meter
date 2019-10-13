@@ -20,4 +20,14 @@
     <string name="invalide_height_error_msg">Invalid Height !!</string>
     <string name="empty_height_error_msg">Empty Height !!</string>
     <string name="enpty_gender_msg">Please Select Gender !!</string>
+    <string name="name_isalpha_error_msg">Only alphabets allowed !!</string>
+    <string name="age_restrict_error_msg">Minimum Age required is 13 yrs !!</string>
+    <string name="total_steps_label">Total Steps</string>
+    <string name="distance_label">Distance (kms)</string>
+    <string name="calories_label">Calories (kcal)</string>
+    <string name="speed_label">Speed (m/s)</string>
+    <string name="floors_label">Floors</string>
+    <string name="toolbar_title">Today</string>
+    <string name="btn_update_label">Update</string>
+    <string name="no_sensor_msg">No Sensor Detected !!</string>
 </resources>

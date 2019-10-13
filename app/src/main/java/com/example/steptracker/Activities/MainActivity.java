@@ -1,27 +1,35 @@
 package com.example.steptracker.Activities;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.widget.FrameLayout;
+import android.view.MenuItem;
+import android.widget.TextView;
 
-import com.example.steptracker.Fragments.DashboardFragment;
-import com.example.steptracker.Fragments.RegistrationFragment;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
+import androidx.navigation.Navigation;
+import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.ui.NavigationUI;
+
 import com.example.steptracker.R;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static androidx.navigation.ui.NavigationUI.onNavDestinationSelected;
+
 public class MainActivity extends AppCompatActivity {
 
-    private static final String PREF_NAME = "com.example.steptracker.RegisterPreference";
-    public static final String IS_REGISTERED = "IsRegistered";
-    @BindView(R.id.fragment_container)
-    FrameLayout fragmentContainer;
-
-    public SharedPreferences registerPreference = getSharedPreferences(PREF_NAME, MODE_PRIVATE);;
-    private int isRegistered = 0;
+    @BindView(R.id.bottom_navigation)
+    BottomNavigationView bottomNavigationView;
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,39 +37,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
+        setupToolbar();
 
-        //checkRegistration();
-        showRegistrationFragment();
-    }
-
-    private void checkRegistration() {
-        isRegistered = registerPreference.getInt(IS_REGISTERED, 0);
-        if(isRegistered == 0){
-            showRegistrationFragment();
-        }else{
-            showDashboardFragment();
-        }
-    }
-
-    private void showDashboardFragment() {
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new DashboardFragment())
-                .commit();
-    }
-
-    private void showRegistrationFragment() {
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new RegistrationFragment())
-                .commit();
+        navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment);
+        NavigationUI.setupWithNavController(bottomNavigationView, navController);
+        NavigationUI.setupActionBarWithNavController(this, navController);
+        bottomNavigationView.setOnNavigationItemSelectedListener(
+                menuItem -> onNavDestinationSelected(menuItem, navController)
+        );
     }
 
     @Override
-    public void onBackPressed() {
-        if (getFragmentManager().getBackStackEntryCount() > 0) {
-            getFragmentManager().popBackStack();
-        } else {
-            super.onBackPressed();
-        }
+    public boolean onSupportNavigateUp() {
+        return NavigationUI.navigateUp(navController, (DrawerLayout) null);
     }
+
+    private void setupToolbar() {
+        setSupportActionBar(toolbar);
+        //getSupportActionBar().setDisplayShowTitleEnabled(false);
+    }
+
 }
 

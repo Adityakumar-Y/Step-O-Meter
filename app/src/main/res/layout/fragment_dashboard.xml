@@ -3,12 +3,48 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#fff"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".Fragments.DashboardFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:background="#e0e0e0"
+        android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:layout_above="@+id/bottom_navigation"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="16dp">
+                <TextView
+                    android:id="@+id/tvSteps"
+                    android:gravity="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="64sp"
+                    android:textStyle="bold"
+                    android:text="0"/>
+
+                <TextView
+                    android:id="@+id/tvStepsLabel"
+                    android:layout_below="@+id/tvSteps"
+                    android:layout_width="match_parent"
+                    android:text="@string/total_steps_label"
+                    android:layout_marginTop="4dp"
+                    android:textSize="24sp"
+                    android:gravity="center"
+                    android:layout_height="wrap_content"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/gridRecord"
+                    android:layout_below="@+id/tvStepsLabel"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:numColumns="2"/>
+
+            </RelativeLayout>
+    </RelativeLayout>
 
 </FrameLayout>

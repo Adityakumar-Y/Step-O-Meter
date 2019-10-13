@@ -1,24 +1,18 @@
-package com.example.steptracker.Fragments;
-
+package com.example.steptracker.Activities;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.example.steptracker.Activities.MainActivity;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.steptracker.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -31,11 +25,13 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
+public class RegistrationActivity extends AppCompatActivity {
 
-public class RegistrationFragment extends Fragment {
-
-
+    private static final String PREF_NAME = "com.example.steptracker.RegisterPreference";
+    public static final String IS_REGISTERED = "IsRegistered";
     private static final String TAG = "RegistrationFragment";
+    private static final int MIN_AGE = 12;
+    private static final int MAX_AGE = 75;
     @BindView(R.id.name_edit_text)
     TextInputEditText etName;
     @BindView(R.id.dob_edit_text)
@@ -60,26 +56,38 @@ public class RegistrationFragment extends Fragment {
     RadioGroup rgGender;
     @BindView(R.id.btn_register)
     Button btnRegister;
-    private View view;
     private Calendar calendar;
     private String userName, userDOB, userGender, height, weight;
-
+    private DatePickerDialog datePickerDialog;
+    private SharedPreferences registerPreference;
+    private int isRegistered = 0;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.fragment_registration, container, false);
-        ButterKnife.bind(this, view);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_registration);
+
+        ButterKnife.bind(this);
+        registerPreference = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         calendar = Calendar.getInstance();
-        return view;
+        checkRegistration();
     }
 
-    DatePickerDialog.OnDateSetListener date = (datePicker, i, i1, i2) -> {
+    private void checkRegistration() {
+        isRegistered = registerPreference.getInt(IS_REGISTERED, 0);
+        if(isRegistered == 1){
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        }
+    }
+
+    private DatePickerDialog.OnDateSetListener dateListner = (datePicker, i, i1, i2) -> {
         calendar.set(Calendar.YEAR, i);
         calendar.set(Calendar.MONTH, i1);
         calendar.set(Calendar.DAY_OF_MONTH, i2);
         setDateLabel();
     };
+
 
     private void setDateLabel() {
         String format = "dd/MM/yyyy";
@@ -90,12 +98,14 @@ public class RegistrationFragment extends Fragment {
 
     @OnClick(R.id.dob_edit_text)
     public void onClickDob() {
-        new DatePickerDialog(getContext(),
-                date,
+        datePickerDialog = new DatePickerDialog(this,
+                dateListner,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-        ).show();
+        );
+        datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+        datePickerDialog.show();
     }
 
     @OnClick(R.id.btn_register)
@@ -114,24 +124,28 @@ public class RegistrationFragment extends Fragment {
     }
 
     private void checkGender() {
-       int selectedId = rgGender.getCheckedRadioButtonId();
-       if(selectedId != -1){
-           RadioButton rbSelected = view.findViewById(selectedId);
-           userGender = rbSelected.getText().toString();
-       } else{
-           userGender = "";
-       }
+        int selectedId = rgGender.getCheckedRadioButtonId();
+        if(selectedId != -1){
+            RadioButton rbSelected = findViewById(selectedId);
+            userGender = rbSelected.getText().toString();
+        } else{
+            userGender = "";
+        }
     }
 
     private void validateUserData() {
         // Validation for userName
         if(!TextUtils.isEmpty(userName)){
-            if(userName.length() > 2 && userName.length() <= 30){
-                nameInputLayout.setError(null);
-
-                //TODO 1: enter into NAME in db
-            } else {
-                nameInputLayout.setError(getString(R.string.name_length_error_msg));
+            if(userName.matches("[a-zA-Z ]+")) {
+                if (userName.length() > 2 && userName.length() <= 25) {
+                    nameInputLayout.setError(null);
+                    //TODO 1: enter into NAME in db
+                } else {
+                    nameInputLayout.setError(getString(R.string.name_length_error_msg));
+                    return;
+                }
+            }else{
+                nameInputLayout.setError(getString(R.string.name_isalpha_error_msg));
                 return;
             }
         }else{
@@ -141,10 +155,15 @@ public class RegistrationFragment extends Fragment {
 
         // Validation for DOB
         if(!TextUtils.isEmpty(userDOB)){
-            dobInputLayout.setError(null);
-            calculateAge(userDOB);
-
-            //TODO 2: enter into DOB and Age in db
+            int age = calculateAge(userDOB);
+            if(age > MIN_AGE && age < MAX_AGE) {
+                //TODO 2: enter into DOB and Age in db
+                dobInputLayout.setError(null);
+                Log.d(TAG, "Age : "+ age);
+            }else{
+                dobInputLayout.setError(getString(R.string.age_restrict_error_msg));
+                return;
+            }
         }else{
             dobInputLayout.setError(getString(R.string.empty_dob_error_msg));
             return;
@@ -188,27 +207,38 @@ public class RegistrationFragment extends Fragment {
         if(!TextUtils.isEmpty(userGender)){
             //TODO 5: enter into Gender in db
         }else{
-            Toast.makeText(getContext(), R.string.enpty_gender_msg, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this , R.string.enpty_gender_msg, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        gotoDashboardFragment();
+        gotoMainActivity();
     }
 
-    private void gotoDashboardFragment() {
-
-        SharedPreferences.Editor editor = ((MainActivity)getActivity()).registerPreference.edit();
-        editor.putInt(((MainActivity)getActivity()).IS_REGISTERED, 1);
+    private void gotoMainActivity() {
+        SharedPreferences.Editor editor = registerPreference.edit();
+        editor.putInt(IS_REGISTERED, 1);
         editor.commit();
-
-        getFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new DashboardFragment())
-                .addToBackStack(null)
-                .commit();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
-    private void calculateAge(String userDOB) {
+    private int calculateAge(String userDOB) {
+        String[] date = userDOB.split("/");
+        int day = Integer.parseInt(date[0]);
+        int month = Integer.parseInt(date[1]);
+        int year = Integer.parseInt(date[2]);
 
+        Calendar dob = Calendar.getInstance();
+        Calendar today = Calendar.getInstance();
+
+        dob.set(year, month, day);
+
+        int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+
+        if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)){
+            age--;
+        }
+
+        return age;
     }
-
 }
