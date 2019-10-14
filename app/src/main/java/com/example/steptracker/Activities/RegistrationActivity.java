@@ -1,8 +1,10 @@
 package com.example.steptracker.Activities;
 
 import android.app.DatePickerDialog;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -13,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.steptracker.Contract.UserContract.ProfileEntry;
+import com.example.steptracker.Database.ProfileDBHelper;
 import com.example.steptracker.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -61,6 +65,9 @@ public class RegistrationActivity extends AppCompatActivity {
     private DatePickerDialog datePickerDialog;
     private SharedPreferences registerPreference;
     private int isRegistered = 0;
+    private ProfileDBHelper dbHelper;
+    private SQLiteDatabase mDatabase;
+    private int age = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +75,19 @@ public class RegistrationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_registration);
 
         ButterKnife.bind(this);
+        init();
+        setupDatabase();
+        checkRegistration();
+    }
+
+    private void init() {
         registerPreference = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         calendar = Calendar.getInstance();
-        checkRegistration();
+    }
+
+    private void setupDatabase() {
+        dbHelper = new ProfileDBHelper(this);
+        mDatabase = dbHelper.getWritableDatabase();
     }
 
     private void checkRegistration() {
@@ -218,6 +235,17 @@ public class RegistrationActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = registerPreference.edit();
         editor.putInt(IS_REGISTERED, 1);
         editor.commit();
+
+        ContentValues cv = new ContentValues();
+        cv.put(ProfileEntry.COLUMN_NAME, userName);
+        cv.put(ProfileEntry.COLUMN_DOB, userDOB);
+        cv.put(ProfileEntry.COLUMN_AGE, age);
+        cv.put(ProfileEntry.COLUMN_GENDER, userGender);
+        cv.put(ProfileEntry.COLUMN_HEIGHT, height);
+        cv.put(ProfileEntry.COLUMN_WEIGHT, weight);
+
+        mDatabase.insert(ProfileEntry.TABLE_NAME, null, cv);
+
         startActivity(new Intent(this, MainActivity.class));
         finish();
     }
@@ -233,12 +261,18 @@ public class RegistrationActivity extends AppCompatActivity {
 
         dob.set(year, month, day);
 
-        int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+        age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
 
         if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)){
             age--;
         }
 
         return age;
+    }
+
+    @Override
+    protected void onPause() {
+        dbHelper.close();
+        super.onPause();
     }
 }

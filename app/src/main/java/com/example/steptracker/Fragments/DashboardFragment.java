@@ -33,7 +33,8 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor sensor;
     private int flag = 0;
-    private long initialValue = 0, steps = 0;
+    private long initialValue = 0, steps = 0, calories = 0;
+    private float distance = 0f;
 
     @BindView(R.id.tvStepsData)
     TextView tvStepsData;
@@ -43,8 +44,10 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     TextView tvCaloriesData;
     @BindView(R.id.tvFloorData)
     TextView tvFloorData;
-    @BindView(R.id.tvSpeedData)
-    TextView tvSpeedData;
+    @BindView(R.id.tvTotalStepsData)
+    TextView tvTotalStepsData;
+    private float height = 5.5f;
+    private float weight = 60;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,21 +61,11 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         ButterKnife.bind(this, view);
-        if(savedInstanceState != null){
-            steps = savedInstanceState.getLong("steps", 0);
-            tvStepsData.setText(String.valueOf(steps));
-        }
         return view;
     }
 
 
 
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putLong("steps", steps);
-    }
 
     private void setupCounterService() {
         sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
@@ -87,13 +80,35 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        calculateSteps(sensorEvent);
+        calculateDistance();
+        calculateCalories();
+    }
+
+    private void calculateCalories() {
+        calories = Math.round((weight*2.2) * (distance * 0.62) * 0.468);
+        tvCaloriesData.setText(String.valueOf(calories));
+    }
+
+    private void calculateSteps(SensorEvent sensorEvent) {
         if(flag == 0)
         {
             flag = 1;
             initialValue = (long) sensorEvent.values[0];
         }
         steps = (long) (sensorEvent.values[0] - initialValue);
-        tvStepsData.setText(String.valueOf(steps));
+        if(steps > 0) {
+            tvStepsData.setText(String.valueOf(steps));
+            tvTotalStepsData.setText(String.valueOf(steps));
+        }
+    }
+
+    private void calculateDistance() {
+        float strideLength = (float) (height * 0.0003048 * .414);
+        distance = steps * strideLength;
+        if(distance > 0.001) {
+            tvDistanceData.setText(String.format("%.2f", distance));
+        }
     }
 
     @Override

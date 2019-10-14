@@ -24,7 +24,7 @@
     <string name="age_restrict_error_msg">Minimum Age required is 13 yrs !!</string>
     <string name="total_steps_label">Total Steps</string>
     <string name="distance_label">Distance (kms)</string>
-    <string name="calories_label">Calories (kcal)</string>
+    <string name="calories_label">Calories (cal)</string>
     <string name="speed_label">Speed (m/s)</string>
     <string name="floors_label">Floors</string>
     <string name="toolbar_title">Today</string>

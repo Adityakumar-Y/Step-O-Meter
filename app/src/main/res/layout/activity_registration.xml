@@ -128,7 +128,7 @@ tools:context=".Activities.RegistrationActivity">
                                 android:hint="@string/hint_height"
                                 android:inputType="numberDecimal"
                                 android:imeOptions="actionNext"
-                                android:maxLength="1"
+                                android:maxLength="3"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"/>
                         </com.google.android.material.textfield.TextInputLayout>
