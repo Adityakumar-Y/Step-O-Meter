@@ -40,8 +40,8 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor sensor1, sensor2;
     private int flag = 0;
-    private long initialValue = 0, steps = 0, calories = 0;
-    private float distance = 0f;
+    private long initialValue = 0, steps = 0, calories = 0, dbSteps = 0, dbCalories = 0;
+    private float distance = 0f, dbDistance = 0f;
     private String sysDate;
 
     @BindView(R.id.tvStepsData)
@@ -65,6 +65,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         getSystemDate();
         setupCounterService();
     }
@@ -89,7 +90,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     private void initializeValues() {
         dbHelper = new WorkoutDBHelper(getContext());
         mDatabase = dbHelper.getWritableDatabase();
-
         // find appropriate record from db wrt Date
         // If not present create a new record
 
@@ -109,7 +109,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         mDatabase.insert(WorkoutEntry.TABLE_NAME, null, cv);
     }
 
-    private Boolean queryDBForDate() {
+    private boolean queryDBForDate() {
 
         cursor = mDatabase.query(WorkoutEntry.TABLE_NAME,
                 null,
@@ -123,14 +123,14 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         if(cursor != null && cursor.getCount() > 0){
             cursor.moveToNext();
 
-            steps = cursor.getInt(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_STEPS));
-            calories = cursor.getLong(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_CALORIES));
-            distance = cursor.getFloat(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_DISTANCE));
+            dbSteps = cursor.getInt(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_STEPS));
+            dbCalories = cursor.getInt(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_CALORIES));
+            dbDistance = cursor.getFloat(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_DISTANCE));
 
-            tvStepsData.setText(String.valueOf(steps));
-            tvTotalStepsData.setText(String.valueOf(steps));
-            tvDistanceData.setText(String.valueOf(steps));
-            tvCaloriesData.setText(String.valueOf(calories));
+            tvStepsData.setText(String.valueOf(dbSteps));
+            tvTotalStepsData.setText(String.valueOf(dbSteps));
+            tvDistanceData.setText(String.format("%.2f", dbDistance));
+            tvCaloriesData.setText(String.valueOf(dbCalories));
             return true;
         }
 
@@ -163,6 +163,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             calculateSteps(sensorEvent);
             calculateDistance();
             calculateCalories();
+            updateDatabase();
         }
         if(sensorEvent.sensor.getType() == Sensor.TYPE_PRESSURE) {
             //calculateFloors();
@@ -188,7 +189,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         if(flag == 0)
         {
             flag = 1;
-            initialValue = (long) sensorEvent.values[0];
+            initialValue = (long) sensorEvent.values[0] - dbSteps;
         }
         steps = (long) (sensorEvent.values[0] - initialValue);
         if(steps > 0) {
@@ -199,13 +200,28 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
 
     private void calculateDistance() {
         float strideLength = (float) (height * 0.0003048 * .414);
-        distance = steps * strideLength;
+        distance = (steps * strideLength);
         if(distance > 0.001) {
             tvDistanceData.setText(String.format("%.2f", distance));
         }
     }
 
+    private void updateDatabase() {
+        ContentValues cv = new ContentValues();
+        cv.put(WorkoutEntry.COLUMN_CALORIES, calories);
+        cv.put(WorkoutEntry.COLUMN_DISTANCE, distance);
+        cv.put(WorkoutEntry.COLUMN_STEPS, steps);
+
+        mDatabase.update(
+                    WorkoutEntry.TABLE_NAME,
+                    cv,
+                    WorkoutEntry.COLUMN_DATE + "=?",
+                    new String[]{sysDate}
+                );
+    }
+
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
+
 }
