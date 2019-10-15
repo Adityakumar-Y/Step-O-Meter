@@ -1,7 +1,10 @@
 package com.example.steptracker.Fragments;
 
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -15,12 +18,16 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.steptracker.Database.WorkoutDBHelper;
+import com.example.steptracker.Contract.UserContract.WorkoutEntry;
 import com.example.steptracker.R;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -31,10 +38,11 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     private static final String TAG = "DashboardFragment";
     private View view;
     private SensorManager sensorManager;
-    private Sensor sensor;
+    private Sensor sensor1, sensor2;
     private int flag = 0;
     private long initialValue = 0, steps = 0, calories = 0;
     private float distance = 0f;
+    private String sysDate;
 
     @BindView(R.id.tvStepsData)
     TextView tvStepsData;
@@ -48,11 +56,23 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     TextView tvTotalStepsData;
     private float height = 5.5f;
     private float weight = 60;
+    private SQLiteDatabase mDatabase;
+    private WorkoutDBHelper dbHelper;
+    private Cursor cursor;
+    private Date date;
+    private SimpleDateFormat df;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSystemDate();
         setupCounterService();
+    }
+
+    private void getSystemDate() {
+        date = Calendar.getInstance().getTime();
+        df = new SimpleDateFormat("yyyy-MM-dd");
+        sysDate = df.format(date);
     }
 
 
@@ -61,29 +81,103 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         ButterKnife.bind(this, view);
+
+        initializeValues();
         return view;
     }
 
+    private void initializeValues() {
+        dbHelper = new WorkoutDBHelper(getContext());
+        mDatabase = dbHelper.getWritableDatabase();
 
+        // find appropriate record from db wrt Date
+        // If not present create a new record
+
+        if(!queryDBForDate()){
+            insertNewRecord();
+        }
+
+    }
+
+    private void insertNewRecord() {
+        ContentValues cv = new ContentValues();
+        cv.put(WorkoutEntry.COLUMN_DATE, sysDate);
+        cv.put(WorkoutEntry.COLUMN_CALORIES, 0);
+        cv.put(WorkoutEntry.COLUMN_DISTANCE, 0);
+        cv.put(WorkoutEntry.COLUMN_STEPS, 0);
+
+        mDatabase.insert(WorkoutEntry.TABLE_NAME, null, cv);
+    }
+
+    private Boolean queryDBForDate() {
+
+        cursor = mDatabase.query(WorkoutEntry.TABLE_NAME,
+                null,
+                WorkoutEntry.COLUMN_DATE + "=?",
+                new String[]{sysDate},
+                null,
+                null,
+                null
+        );
+
+        if(cursor != null && cursor.getCount() > 0){
+            cursor.moveToNext();
+
+            steps = cursor.getInt(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_STEPS));
+            calories = cursor.getLong(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_CALORIES));
+            distance = cursor.getFloat(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_DISTANCE));
+
+            tvStepsData.setText(String.valueOf(steps));
+            tvTotalStepsData.setText(String.valueOf(steps));
+            tvDistanceData.setText(String.valueOf(steps));
+            tvCaloriesData.setText(String.valueOf(calories));
+            return true;
+        }
+
+        return false;
+    }
 
 
     private void setupCounterService() {
         sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-        if(sensor != null){
-            sensorManager.registerListener(this, sensor,SensorManager.SENSOR_DELAY_FASTEST);
-        }else{
+        sensor1 = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        sensor2 = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+        if(sensor1 != null){
+            sensorManager.registerListener(this, sensor1, SensorManager.SENSOR_DELAY_FASTEST);
+        } else {
             Toast.makeText(getContext(), getString(R.string.no_sensor_msg), Toast.LENGTH_SHORT).show();
             new Handler().postDelayed(() -> getActivity().finish(), 3000);
+        }
+
+
+        if(sensor2 != null){
+            sensorManager.registerListener(this, sensor2, SensorManager.SENSOR_DELAY_FASTEST);
+        }else{
+            Toast.makeText(getContext(), "Device doesn't support Floor Calculation", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        calculateSteps(sensorEvent);
-        calculateDistance();
-        calculateCalories();
+        if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
+            calculateSteps(sensorEvent);
+            calculateDistance();
+            calculateCalories();
+        }
+        if(sensorEvent.sensor.getType() == Sensor.TYPE_PRESSURE) {
+            //calculateFloors();
+            Log.d(TAG, "onSensorChanged: Barometer Present !!");
+        }
     }
+
+    /*private void calculateFloors() {
+        float altitude = SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, p2)
+                - SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, p1);
+
+        if(altitude > 0.001){
+            tvFloorData.setText(String.format("%.2f", altitude));
+        }
+    }*/
 
     private void calculateCalories() {
         calories = Math.round((weight*2.2) * (distance * 0.62) * 0.468);
