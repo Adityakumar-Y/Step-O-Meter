@@ -1,10 +1,10 @@
-package com.example.steptracker.Database;
+package com.example.steptracker.Databases;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.example.steptracker.Contract.UserContract.ProfileEntry;
+import com.example.steptracker.Contracts.UserContract.ProfileEntry;
 
 public class ProfileDBHelper extends SQLiteOpenHelper {
 

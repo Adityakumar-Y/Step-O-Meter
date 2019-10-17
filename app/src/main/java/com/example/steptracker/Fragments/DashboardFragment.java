@@ -21,8 +21,8 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.steptracker.Database.WorkoutDBHelper;
-import com.example.steptracker.Contract.UserContract.WorkoutEntry;
+import com.example.steptracker.Databases.WorkoutDBHelper;
+import com.example.steptracker.Contracts.UserContract.WorkoutEntry;
 import com.example.steptracker.R;
 
 import java.text.SimpleDateFormat;
@@ -82,14 +82,22 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         ButterKnife.bind(this, view);
-
-        initializeValues();
         return view;
     }
 
-    private void initializeValues() {
+    @Override
+    public void onResume() {
         dbHelper = new WorkoutDBHelper(getContext());
         mDatabase = dbHelper.getWritableDatabase();
+        initializeValues();
+        super.onResume();
+    }
+
+    /**
+     *  Check for current date in database if present initializes the values and
+     *  if not present inserts a new record in the Database
+     */
+    private void initializeValues() {
         // find appropriate record from db wrt Date
         // If not present create a new record
 
@@ -98,6 +106,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         }
 
     }
+
 
     private void insertNewRecord() {
         ContentValues cv = new ContentValues();
@@ -129,7 +138,9 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
 
             tvStepsData.setText(String.valueOf(dbSteps));
             tvTotalStepsData.setText(String.valueOf(dbSteps));
-            tvDistanceData.setText(String.format("%.2f", dbDistance));
+            if(dbDistance >= 0.01) {
+                tvDistanceData.setText(String.format("%.2f", dbDistance));
+            }
             tvCaloriesData.setText(String.valueOf(dbCalories));
             return true;
         }
@@ -138,6 +149,9 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     }
 
 
+    /**
+     * Function to get appropriate sensors and registering its listener if present
+     */
     private void setupCounterService() {
         sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
         sensor1 = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
@@ -157,13 +171,20 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         }
     }
 
+
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
+            if(!sysDate.equals(df.format(Calendar.getInstance().getTime()))){
+                updateDatabase();
+                sysDate = df.format(Calendar.getInstance().getTime());
+                initializeValues();
+                flag = 0;
+                Toast.makeText(getContext(), "New Day Started !!", Toast.LENGTH_SHORT).show();
+            }
             calculateSteps(sensorEvent);
             calculateDistance();
             calculateCalories();
-            updateDatabase();
         }
         if(sensorEvent.sensor.getType() == Sensor.TYPE_PRESSURE) {
             //calculateFloors();
@@ -192,7 +213,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             initialValue = (long) sensorEvent.values[0] - dbSteps;
         }
         steps = (long) (sensorEvent.values[0] - initialValue);
-        if(steps > 0) {
+        if(steps >= 0) {
             tvStepsData.setText(String.valueOf(steps));
             tvTotalStepsData.setText(String.valueOf(steps));
         }
@@ -201,7 +222,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     private void calculateDistance() {
         float strideLength = (float) (height * 0.0003048 * .414);
         distance = (steps * strideLength);
-        if(distance > 0.001) {
+        if(distance >= 0.01) {
             tvDistanceData.setText(String.format("%.2f", distance));
         }
     }
@@ -224,4 +245,11 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
+
+    @Override
+    public void onPause() {
+        updateDatabase();
+        dbHelper.close();
+        super.onPause();
+    }
 }

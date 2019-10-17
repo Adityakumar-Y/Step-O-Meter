@@ -1,18 +1,22 @@
 package com.example.steptracker.Fragments;
 
 
+import android.content.BroadcastReceiver;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
-import com.example.steptracker.Contract.UserContract;
-import com.example.steptracker.Database.ProfileDBHelper;
+import com.amulyakhare.textdrawable.TextDrawable;
+import com.example.steptracker.Contracts.UserContract;
+import com.example.steptracker.Databases.ProfileDBHelper;
 import com.example.steptracker.R;
 
 import butterknife.BindView;
@@ -35,6 +39,10 @@ public class ProfileFragment extends Fragment {
     TextView tvAccHeight;
     @BindView(R.id.tvAccWeight)
     TextView tvAccWeight;
+    @BindView(R.id.tvProfileName)
+    TextView tvProfileName;
+    @BindView(R.id.imgProfile)
+    ImageView imgProfile;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -59,6 +67,7 @@ public class ProfileFragment extends Fragment {
                 UserContract.ProfileEntry.COLUMN_HEIGHT,
                 UserContract.ProfileEntry.COLUMN_WEIGHT
         };
+
         Cursor cursor = mDatabase.query(UserContract.ProfileEntry.TABLE_NAME,
                 columns,
                 null,
@@ -74,10 +83,25 @@ public class ProfileFragment extends Fragment {
             weight = cursor.getString(cursor.getColumnIndexOrThrow(UserContract.ProfileEntry.COLUMN_WEIGHT));
         }
 
+        setProfileIcon();
+
+        tvProfileName.setText(name);
         tvAccName.setText(name);
         tvAccDob.setText(dob);
         tvAccHeight.setText(height + " feets");
         tvAccWeight.setText(weight + " kg");
+    }
+
+    private void setProfileIcon() {
+        String nameInitials = name.substring(0, 2);
+        TextDrawable drawable = TextDrawable.builder()
+                .beginConfig()
+                    .textColor(R.color.colorPrimary)
+                    .bold()
+                    .toUpperCase()
+                .endConfig()
+                .buildRoundRect(nameInitials, Color.parseColor("#FFFFB500"), 10);
+        imgProfile.setImageDrawable(drawable);
     }
 
     @Override

@@ -10,12 +10,14 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Activities.RegistrationActivity"
-            android:screenOrientation="portrait"></activity>
+        <activity
+            android:name=".Activities.RegistrationActivity"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".Activities.MainActivity"
-            android:screenOrientation="portrait"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Activities.SplashActivity"
             android:screenOrientation="portrait">
@@ -25,6 +27,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".Receivers.DayChangedReceiver"
+            android:enabled="true"
+            android:exported="true">
+        </receiver>
     </application>
 
 </manifest>

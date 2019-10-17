@@ -1,37 +1,39 @@
 package com.example.steptracker.Activities;
 
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.MenuItem;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
-import androidx.navigation.NavDestination;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
+import com.example.steptracker.Contracts.UserContract;
+import com.example.steptracker.Databases.WorkoutDBHelper;
 import com.example.steptracker.Fragments.DashboardFragment;
 import com.example.steptracker.Fragments.GraphFragment;
 import com.example.steptracker.Fragments.ProfileFragment;
+import com.example.steptracker.Interface.DayChangedListner;
 import com.example.steptracker.R;
+import com.example.steptracker.Receivers.DayChangedReceiver;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static androidx.navigation.ui.NavigationUI.onNavDestinationSelected;
-
-public class MainActivity extends AppCompatActivity implements BottomNavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements BottomNavigationView.OnNavigationItemSelectedListener{
 
     private static final String TAG = "MainActivity";
     @BindView(R.id.bottom_navigation)
@@ -45,6 +47,13 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
     private final FragmentManager fm = getSupportFragmentManager();
     private Fragment active = dashboardFragment;
     private boolean doubleBackPressed = false;
+    private DayChangedReceiver dayChangedReceiver;
+    private IntentFilter filter = new IntentFilter();
+    public SQLiteDatabase mDatabase;
+    public WorkoutDBHelper dbHelper;
+    private Date date;
+    private SimpleDateFormat df;
+    public String sysDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,15 +63,14 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         ButterKnife.bind(this);
         setupToolbar();
         setupBottomNav();
-        /*navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment);
-        NavigationUI.setupWithNavController(bottomNavigationView, navController);
-        NavigationUI.setupActionBarWithNavController(this, navController);
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(
-                menuItem -> onNavDestinationSelected(menuItem, navController)
-        );*/
+        setupDatabase();
         bottomNavigationView.setOnNavigationItemSelectedListener(this);
+    }
 
+
+    private void setupDatabase() {
+        dbHelper = new WorkoutDBHelper(this);
+        mDatabase = dbHelper.getWritableDatabase();
     }
 
     private void setupBottomNav() {
@@ -71,14 +79,9 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         fm.beginTransaction().add(R.id.fragmentContainer, dashboardFragment, "1").commit();
     }
 
-   /* @Override
-    public boolean onSupportNavigateUp() {
-        return NavigationUI.navigateUp(navController, (DrawerLayout) null);
-    }*/
 
     private void setupToolbar() {
         setSupportActionBar(toolbar);
-        //getSupportActionBar().setDisplayShowTitleEnabled(false);
     }
 
 
@@ -119,13 +122,12 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
             }
             getSupportFragmentManager().beginTransaction().hide(active).show(dashboardFragment).commit();
             active = dashboardFragment;
-            new Handler().postDelayed(() -> {
-                doubleBackPressed = false;
-            }, 2000);
+            new Handler().postDelayed(() -> doubleBackPressed = false, 2000);
         }else{
             super.onBackPressed();
         }
     }
+
 
 }
 

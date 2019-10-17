@@ -30,4 +30,7 @@
     <string name="toolbar_title">Today</string>
     <string name="btn_update_label">Update</string>
     <string name="no_sensor_msg">No Sensor Detected !!</string>
+    <string name="profile_height_label">Height</string>
+    <string name="profile_weight_label">Weight</string>
+    <string name="account_info_label">Account Info</string>
 </resources>

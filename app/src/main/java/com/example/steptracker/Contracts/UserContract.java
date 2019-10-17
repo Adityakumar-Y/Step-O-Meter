@@ -1,4 +1,4 @@
-package com.example.steptracker.Contract;
+package com.example.steptracker.Contracts;
 
 import android.provider.BaseColumns;
 

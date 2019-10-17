@@ -15,8 +15,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.steptracker.Contract.UserContract.ProfileEntry;
-import com.example.steptracker.Database.ProfileDBHelper;
+import com.example.steptracker.Contracts.UserContract.ProfileEntry;
+import com.example.steptracker.Databases.ProfileDBHelper;
 import com.example.steptracker.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
