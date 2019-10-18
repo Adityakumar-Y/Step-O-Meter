@@ -3,6 +3,7 @@ package com.example.steptracker.Activities;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,17 +17,20 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 
+import com.example.steptracker.Adapters.RecordAdapter;
 import com.example.steptracker.Contracts.UserContract;
 import com.example.steptracker.Databases.WorkoutDBHelper;
 import com.example.steptracker.Fragments.DashboardFragment;
 import com.example.steptracker.Fragments.GraphFragment;
 import com.example.steptracker.Fragments.ProfileFragment;
 import com.example.steptracker.Interface.DayChangedListner;
+import com.example.steptracker.Models.Record;
 import com.example.steptracker.R;
 import com.example.steptracker.Receivers.DayChangedReceiver;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -40,20 +44,17 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
     BottomNavigationView bottomNavigationView;
     @BindView(R.id.toolbar)
     Toolbar toolbar;
-    private NavController navController;
     private final Fragment dashboardFragment = new DashboardFragment();
     private final Fragment graphFragment = new GraphFragment();
     private final Fragment profileFragment = new ProfileFragment();
     private final FragmentManager fm = getSupportFragmentManager();
     private Fragment active = dashboardFragment;
     private boolean doubleBackPressed = false;
-    private DayChangedReceiver dayChangedReceiver;
-    private IntentFilter filter = new IntentFilter();
-    public SQLiteDatabase mDatabase;
-    public WorkoutDBHelper dbHelper;
-    private Date date;
-    private SimpleDateFormat df;
-    public String sysDate;
+
+    public ArrayList<Record> recordList;
+    public RecordAdapter adapter;
+    private WorkoutDBHelper dbHelper;
+    private SQLiteDatabase mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,17 +62,15 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
+        recordList = new ArrayList<>();
+        adapter = new RecordAdapter(this, recordList);
+        dbHelper = new WorkoutDBHelper(this);
+        mDatabase = dbHelper.getReadableDatabase();
         setupToolbar();
         setupBottomNav();
-        setupDatabase();
         bottomNavigationView.setOnNavigationItemSelectedListener(this);
     }
 
-
-    private void setupDatabase() {
-        dbHelper = new WorkoutDBHelper(this);
-        mDatabase = dbHelper.getWritableDatabase();
-    }
 
     private void setupBottomNav() {
         fm.beginTransaction().add(R.id.fragmentContainer, profileFragment, "3").hide(profileFragment).commit();
@@ -129,5 +128,30 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
     }
 
 
+    public void getAllData() {
+
+        Cursor cursor = mDatabase.query(UserContract.WorkoutEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        while (cursor.moveToNext()) {
+            String date = cursor.getString(cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_DATE));
+            String steps = cursor.getString(cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_STEPS));
+
+
+            recordList.add(new Record(date, Long.valueOf(steps)));
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        dbHelper.close();
+        super.onPause();
+    }
 }
 
