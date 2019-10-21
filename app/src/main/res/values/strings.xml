@@ -33,4 +33,17 @@
     <string name="profile_height_label">Height</string>
     <string name="profile_weight_label">Weight</string>
     <string name="account_info_label">Account Info</string>
+    <string name="PREF_NAME">PREF_USER_NAME</string>
+    <string name="PREF_DOB">PREF_USER_DOB</string>
+    <string name="PREF_GENDER">PREF_GENDER</string>
+    <string name="PREF_AGE">PREF_USER_AGE</string>
+    <string name="PREF_HEIGHT">PREF_USER_HEIGHT</string>
+    <string name="PREF_WEIGHT">PREF_USER_WEIGHT</string>
+    <string name="IS_REGISTERED">IsRegistered</string>
+    <string name="steps_completed_label">Steps Completed</string>
+    <string name="permission_explanation_msg">App needs Storage Permission to work properly</string>
+    <string name="goto_settings_msg"><![CDATA[You have denied some permissions. Grant permissions at [Settings] > [Permissions]]]></string>
+    <string name="gender_label">Gender</string>
+    <string name="set_goal_label">Set Goal :</string>
+    <string name="PREF_USER_GOAL">PREF_USER_GOAL</string>
 </resources>

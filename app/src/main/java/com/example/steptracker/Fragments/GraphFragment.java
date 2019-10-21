@@ -38,12 +38,11 @@ public class GraphFragment extends Fragment {
 
 
     private void setupRecyclerView() {
+        ((MainActivity) getActivity()).recordList.clear();
         ((MainActivity) getActivity()).getAllData();
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(((MainActivity) getActivity()).adapter);
 
     }
-
-
 
 }

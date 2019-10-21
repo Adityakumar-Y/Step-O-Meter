@@ -1,22 +1,23 @@
-package com.example.steptracker.Activities;
+package com.example.steptracker.Fragments;
 
 import android.app.DatePickerDialog;
-import android.content.ContentValues;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
-import com.example.steptracker.Contracts.UserContract.ProfileEntry;
-import com.example.steptracker.Databases.ProfileDBHelper;
+import com.example.steptracker.Activities.MainActivity;
 import com.example.steptracker.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -29,13 +30,12 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class RegistrationActivity extends AppCompatActivity {
+public class RegistrationFragment extends Fragment {
 
-    private static final String PREF_NAME = "com.example.steptracker.RegisterPreference";
-    public static final String IS_REGISTERED = "IsRegistered";
     private static final String TAG = "RegistrationFragment";
     private static final int MIN_AGE = 12;
     private static final int MAX_AGE = 75;
+
     @BindView(R.id.name_edit_text)
     TextInputEditText etName;
     @BindView(R.id.dob_edit_text)
@@ -60,43 +60,28 @@ public class RegistrationActivity extends AppCompatActivity {
     RadioGroup rgGender;
     @BindView(R.id.btn_register)
     Button btnRegister;
+
+    private View view;
     private Calendar calendar;
     private String userName, userDOB, userGender, height, weight;
+    private float userHeight, userWeight;
     private DatePickerDialog datePickerDialog;
-    private SharedPreferences registerPreference;
-    private int isRegistered = 0;
-    private ProfileDBHelper dbHelper;
-    private SQLiteDatabase mDatabase;
     private int age = 0;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_registration);
 
-        ButterKnife.bind(this);
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        view = inflater.inflate(R.layout.fragment_registration, container, false);
+        ButterKnife.bind(this, view);
         init();
-        setupDatabase();
-        checkRegistration();
+        return view;
     }
 
     private void init() {
-        registerPreference = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         calendar = Calendar.getInstance();
     }
 
-    private void setupDatabase() {
-        dbHelper = new ProfileDBHelper(this);
-        mDatabase = dbHelper.getWritableDatabase();
-    }
-
-    private void checkRegistration() {
-        isRegistered = registerPreference.getInt(IS_REGISTERED, 0);
-        if(isRegistered == 1){
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-        }
-    }
 
     private DatePickerDialog.OnDateSetListener dateListner = (datePicker, i, i1, i2) -> {
         calendar.set(Calendar.YEAR, i);
@@ -115,7 +100,7 @@ public class RegistrationActivity extends AppCompatActivity {
 
     @OnClick(R.id.dob_edit_text)
     public void onClickDob() {
-        datePickerDialog = new DatePickerDialog(this,
+        datePickerDialog = new DatePickerDialog(getContext(),
                 dateListner,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -143,7 +128,7 @@ public class RegistrationActivity extends AppCompatActivity {
     private void checkGender() {
         int selectedId = rgGender.getCheckedRadioButtonId();
         if(selectedId != -1){
-            RadioButton rbSelected = findViewById(selectedId);
+            RadioButton rbSelected = view.findViewById(selectedId);
             userGender = rbSelected.getText().toString();
         } else{
             userGender = "";
@@ -156,7 +141,6 @@ public class RegistrationActivity extends AppCompatActivity {
             if(userName.matches("[a-zA-Z ]+")) {
                 if (userName.length() > 2 && userName.length() <= 25) {
                     nameInputLayout.setError(null);
-                    //TODO 1: enter into NAME in db
                 } else {
                     nameInputLayout.setError(getString(R.string.name_length_error_msg));
                     return;
@@ -174,7 +158,6 @@ public class RegistrationActivity extends AppCompatActivity {
         if(!TextUtils.isEmpty(userDOB)){
             int age = calculateAge(userDOB);
             if(age > MIN_AGE && age < MAX_AGE) {
-                //TODO 2: enter into DOB and Age in db
                 dobInputLayout.setError(null);
                 Log.d(TAG, "Age : "+ age);
             }else{
@@ -189,11 +172,9 @@ public class RegistrationActivity extends AppCompatActivity {
 
         // Validation for userHeight
         if(!TextUtils.isEmpty(height)){
-            float userHeight = Float.valueOf(height);
+            userHeight = Float.valueOf(height);
             if(userHeight > 3 && userHeight <= 8){
                 heightInputLayout.setError(null);
-
-                //TODO 3: enter into Height in db
             } else {
                 heightInputLayout.setError(getString(R.string.invalide_height_error_msg));
                 return;
@@ -206,11 +187,9 @@ public class RegistrationActivity extends AppCompatActivity {
 
         // Validation for userWeight
         if(!TextUtils.isEmpty(weight)){
-            float userWeight = Float.valueOf(weight);
+            userWeight = Float.valueOf(weight);
             if(userWeight > 15 && userWeight < 150){
                 weightInputLayout.setError(null);
-
-                //TODO 4: enter into Height in db
             } else {
                 weightInputLayout.setError(getString(R.string.invalid_weight_error_msg));
                 return;
@@ -221,33 +200,33 @@ public class RegistrationActivity extends AppCompatActivity {
         }
 
 
-        if(!TextUtils.isEmpty(userGender)){
-            //TODO 5: enter into Gender in db
-        }else{
-            Toast.makeText(this , R.string.enpty_gender_msg, Toast.LENGTH_SHORT).show();
+        if(TextUtils.isEmpty(userGender)){
+            Toast.makeText(getContext() , R.string.enpty_gender_msg, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        gotoMainActivity();
+        gotoDashboard();
     }
 
-    private void gotoMainActivity() {
-        SharedPreferences.Editor editor = registerPreference.edit();
-        editor.putInt(IS_REGISTERED, 1);
+    private void gotoDashboard() {
+
+        ((MainActivity) getActivity()).showLayout();
+
+        SharedPreferences.Editor editor = ((MainActivity)getActivity()).registerPreference.edit();
+        editor.putString(getString(R.string.PREF_NAME), userName);
+        editor.putString(getString(R.string.PREF_DOB), userDOB);
+        editor.putString(getString(R.string.PREF_GENDER), userGender);
+        editor.putInt(getString(R.string.PREF_AGE), age);
+        editor.putFloat(getString(R.string.PREF_HEIGHT), userHeight);
+        editor.putFloat(getString(R.string.PREF_WEIGHT), userWeight);
+        editor.putLong(getString(R.string.PREF_USER_GOAL), 1000);
+        editor.putInt(getString(R.string.IS_REGISTERED), 1);
         editor.commit();
 
-        ContentValues cv = new ContentValues();
-        cv.put(ProfileEntry.COLUMN_NAME, userName);
-        cv.put(ProfileEntry.COLUMN_DOB, userDOB);
-        cv.put(ProfileEntry.COLUMN_AGE, age);
-        cv.put(ProfileEntry.COLUMN_GENDER, userGender);
-        cv.put(ProfileEntry.COLUMN_HEIGHT, height);
-        cv.put(ProfileEntry.COLUMN_WEIGHT, weight);
 
-        mDatabase.insert(ProfileEntry.TABLE_NAME, null, cv);
-
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
+        getFragmentManager().beginTransaction()
+                .remove(new RegistrationFragment())
+                .commit();
     }
 
     private int calculateAge(String userDOB) {
@@ -270,9 +249,4 @@ public class RegistrationActivity extends AppCompatActivity {
         return age;
     }
 
-    @Override
-    protected void onPause() {
-        dbHelper.close();
-        super.onPause();
-    }
 }
