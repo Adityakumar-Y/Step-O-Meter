@@ -3,18 +3,18 @@ package com.example.steptracker.Fragments;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,10 +22,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.steptracker.Activities.MainActivity;
-import com.example.steptracker.Databases.WorkoutDBHelper;
 import com.example.steptracker.Contracts.UserContract.WorkoutEntry;
 import com.example.steptracker.Models.Record;
 import com.example.steptracker.R;
+import com.example.steptracker.Utils.CustomGoalDialog;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -33,9 +34,10 @@ import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
-public class DashboardFragment extends Fragment implements SensorEventListener{
+public class DashboardFragment extends Fragment implements SensorEventListener, CustomGoalDialog.ChangeGoalListener {
 
     private static final String TAG = "DashboardFragment";
     private View view;
@@ -52,22 +54,34 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     TextView tvDistanceData;
     @BindView(R.id.tvCaloriesData)
     TextView tvCaloriesData;
-    @BindView(R.id.tvTotalStepsData)
-    TextView tvTotalStepsData;
-    private float height = 5.5f;
-    private float weight = 60;
-    private SQLiteDatabase mDatabase;
-    private WorkoutDBHelper dbHelper;
+    @BindView(R.id.tvGoalSteps)
+    TextView tvGoalSteps;
+    @BindView(R.id.progressBar)
+    ProgressBar goalProgress;
+    @BindView(R.id.fab)
+    FloatingActionButton fab;
+
+    private float height, weight;
     private Cursor cursor;
     private Date date;
     private SimpleDateFormat df;
+    private CustomGoalDialog goalDialog;
+    private long goalSet;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        init();
         getSystemDate();
         setupCounterService();
+    }
+
+    private void init() {
+        goalSet = ((MainActivity) getActivity()).registerPreference.getLong(getString(R.string.PREF_USER_GOAL), 1000);
+        height = ((MainActivity) getActivity()).registerPreference.getFloat(getString(R.string.PREF_HEIGHT), 0f);
+        weight = ((MainActivity) getActivity()).registerPreference.getFloat(getString(R.string.PREF_WEIGHT), 0f);
+        goalDialog = new CustomGoalDialog();
     }
 
     private void getSystemDate() {
@@ -76,18 +90,17 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         sysDate = df.format(date);
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         ButterKnife.bind(this, view);
+        tvGoalSteps.setText(String.valueOf(goalSet));
         return view;
     }
 
     @Override
     public void onResume() {
-        initDatabase();
         initializeValues();
         super.onResume();
     }
@@ -102,14 +115,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             ((MainActivity) getActivity()).recordList.add(new Record(sysDate, 0));
             ((MainActivity)getActivity()).adapter.notifyDataSetChanged();
         }
-
-    }
-
-    private void initDatabase() {
-        if(dbHelper == null) {
-            dbHelper = new WorkoutDBHelper(getContext());
-        }
-        mDatabase = dbHelper.getWritableDatabase();
     }
 
 
@@ -120,7 +125,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
         cv.put(WorkoutEntry.COLUMN_DISTANCE, 0);
         cv.put(WorkoutEntry.COLUMN_STEPS, 0);
 
-        mDatabase.insert(WorkoutEntry.TABLE_NAME, null, cv);
+        ((MainActivity) getActivity()).mDatabase.insert(WorkoutEntry.TABLE_NAME, null, cv);
         dbSteps = 0;
         dbCalories = 0;
         dbDistance = 0;
@@ -128,7 +133,7 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
 
     private boolean queryDBForDate() {
 
-        cursor = mDatabase.query(WorkoutEntry.TABLE_NAME,
+        cursor = ((MainActivity) getActivity()).mDatabase.query(WorkoutEntry.TABLE_NAME,
                 null,
                 WorkoutEntry.COLUMN_DATE + "=?",
                 new String[]{sysDate},
@@ -145,7 +150,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             dbDistance = cursor.getFloat(cursor.getColumnIndexOrThrow(WorkoutEntry.COLUMN_DISTANCE));
 
             tvStepsData.setText(String.valueOf(dbSteps));
-            tvTotalStepsData.setText(String.valueOf(dbSteps));
             tvDistanceData.setText(String.format("%.2f", dbDistance));
             tvCaloriesData.setText(String.valueOf(dbCalories));
             return true;
@@ -167,8 +171,6 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             Toast.makeText(getContext(), getString(R.string.no_sensor_msg), Toast.LENGTH_SHORT).show();
             new Handler().postDelayed(() -> getActivity().finish(), 3000);
         }
-
-
     }
 
 
@@ -184,8 +186,16 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             calculateSteps(sensorEvent);
             calculateDistance();
             calculateCalories();
+            updateDatabase();
+            updateList();
+            setGoalProgress();
         }
 
+    }
+
+    private void setGoalProgress() {
+        int progress = Math.round((steps/(goalSet*1.0f))*100);
+        goalProgress.setProgress(progress);
     }
 
 
@@ -195,23 +205,19 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     }
 
     private void calculateSteps(SensorEvent sensorEvent) {
-        if(flag == 0)
-        {
+        if(flag == 0) {
             flag = 1;
             initialValue = (long) sensorEvent.values[0] - dbSteps;
         }
         steps = (long) (sensorEvent.values[0] - initialValue);
         if(steps >= 0) {
             tvStepsData.setText(String.valueOf(steps));
-            tvTotalStepsData.setText(String.valueOf(steps));
-            updateDatabase();
-            updateList();
         }
     }
 
     private void updateList() {
         if(getActivity() != null) {
-            if (((MainActivity) getActivity()).recordList != null && ((MainActivity) getActivity()).recordList.size() > 0) {
+            /*if (((MainActivity) getActivity()).recordList != null && ((MainActivity) getActivity()).recordList.size() > 0) {
                 for (int i = 0; i < ((MainActivity) getActivity()).recordList.size(); i++) {
                     String date = ((MainActivity) getActivity()).recordList.get(i).getDate();
                     if (date.equals(sysDate)) {
@@ -222,10 +228,11 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
             } else {
                 ((MainActivity) getActivity()).recordList.add(new Record(sysDate, 0));
                 ((MainActivity) getActivity()).adapter.notifyDataSetChanged();
-            }
+            }*/
+            ((MainActivity) getActivity()).recordList.clear();
+            ((MainActivity) getActivity()).getAllData();
+            ((MainActivity) getActivity()).adapter.notifyDataSetChanged();
         }
-
-
     }
 
     private void calculateDistance() {
@@ -235,29 +242,41 @@ public class DashboardFragment extends Fragment implements SensorEventListener{
     }
 
     private void updateDatabase() {
-        initDatabase();
         ContentValues cv = new ContentValues();
         cv.put(WorkoutEntry.COLUMN_CALORIES, calories);
         cv.put(WorkoutEntry.COLUMN_DISTANCE, distance);
         cv.put(WorkoutEntry.COLUMN_STEPS, steps);
 
-        mDatabase.update(
+        if(getActivity() != null) {
+            ((MainActivity) getActivity()).mDatabase.update(
                     WorkoutEntry.TABLE_NAME,
                     cv,
                     WorkoutEntry.COLUMN_DATE + "=?",
                     new String[]{sysDate}
-                );
+            );
+        }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
+    @OnClick(R.id.fab)
+    public void openGoalPrompt(){
+        goalDialog.setOnChangeGoalListener(this);
+        goalDialog.setCancelable(false);
+        goalDialog.show(getFragmentManager(), null);
+    }
+
 
     @Override
-    public void onPause() {
-        //updateDatabase();
-        dbHelper.close();
-        super.onPause();
+    public void updateGoal(long steps) {
+        SharedPreferences.Editor editor = ((MainActivity) getActivity()).registerPreference.edit();
+        editor.putLong(getString(R.string.PREF_USER_GOAL), steps);
+        editor.commit();
+
+        goalSet = steps;
+        tvGoalSteps.setText(String.valueOf(goalSet));
+        setGoalProgress();
     }
 }

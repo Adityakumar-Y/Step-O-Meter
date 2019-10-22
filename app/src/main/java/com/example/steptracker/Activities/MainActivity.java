@@ -1,60 +1,61 @@
 package com.example.steptracker.Activities;
 
-import android.content.ContentValues;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.MenuItem;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.navigation.NavController;
 
 import com.example.steptracker.Adapters.RecordAdapter;
+import com.example.steptracker.Adapters.ViewPagerAdapter;
 import com.example.steptracker.Contracts.UserContract;
 import com.example.steptracker.Databases.WorkoutDBHelper;
 import com.example.steptracker.Fragments.DashboardFragment;
 import com.example.steptracker.Fragments.GraphFragment;
 import com.example.steptracker.Fragments.ProfileFragment;
-import com.example.steptracker.Interface.DayChangedListner;
+import com.example.steptracker.Fragments.RegistrationFragment;
 import com.example.steptracker.Models.Record;
 import com.example.steptracker.R;
-import com.example.steptracker.Receivers.DayChangedReceiver;
+import com.example.steptracker.Utils.CustomViewPager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity implements BottomNavigationView.OnNavigationItemSelectedListener{
+import static android.view.View.GONE;
+
+public class MainActivity extends AppCompatActivity implements BottomNavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "MainActivity";
+    private static final String PREF_NAME = "com.example.steptracker.RegisterPreference";
+
     @BindView(R.id.bottom_navigation)
     BottomNavigationView bottomNavigationView;
     @BindView(R.id.toolbar)
     Toolbar toolbar;
-    private final Fragment dashboardFragment = new DashboardFragment();
-    private final Fragment graphFragment = new GraphFragment();
-    private final Fragment profileFragment = new ProfileFragment();
-    private final FragmentManager fm = getSupportFragmentManager();
-    private Fragment active = dashboardFragment;
-    private boolean doubleBackPressed = false;
+    @BindView(R.id.viewPager)
+    CustomViewPager viewPager;
+    @BindView(R.id.fragmentContainer)
+    FrameLayout container;
+    @BindView(R.id.rl_dashboard)
+    RelativeLayout rlDashboard;
 
-    public ArrayList<Record> recordList;
+    public SharedPreferences registerPreference;
+    public int isRegistered = 0;
+
+    public ArrayList<Record> recordList = new ArrayList<>();
     public RecordAdapter adapter;
-    private WorkoutDBHelper dbHelper;
-    private SQLiteDatabase mDatabase;
+    public WorkoutDBHelper dbHelper;
+    public SQLiteDatabase mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,22 +63,72 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
-        recordList = new ArrayList<>();
-        adapter = new RecordAdapter(this, recordList);
-        dbHelper = new WorkoutDBHelper(this);
-        mDatabase = dbHelper.getReadableDatabase();
+
+        setupAdapter();
+        setupDatabase();
+        setupPreference();
         setupToolbar();
-        setupBottomNav();
+        setupViewPager();
+        checkRegistration();
         bottomNavigationView.setOnNavigationItemSelectedListener(this);
     }
 
 
-    private void setupBottomNav() {
-        fm.beginTransaction().add(R.id.fragmentContainer, profileFragment, "3").hide(profileFragment).commit();
-        fm.beginTransaction().add(R.id.fragmentContainer, graphFragment, "2").hide(graphFragment).commit();
-        fm.beginTransaction().add(R.id.fragmentContainer, dashboardFragment, "1").commit();
+    private void setupViewPager() {
+        ViewPagerAdapter adapter = new ViewPagerAdapter (MainActivity.this.getSupportFragmentManager());
+        adapter.addFragment(new DashboardFragment());
+        adapter.addFragment(new GraphFragment());
+        adapter.addFragment(new ProfileFragment());
+        viewPager.setAdapter(adapter);
+        viewPager.setPagingEnabled(false);
     }
 
+    private void checkRegistration() {
+        isRegistered = registerPreference.getInt(getString(R.string.IS_REGISTERED), 0);
+        if(isRegistered == 1){
+            showLayout();
+        }else{
+            hideLayout();
+            gotoRegistrationForm();
+        }
+    }
+
+    public void hideLayout() {
+        if(rlDashboard.getVisibility() == View.VISIBLE){
+            rlDashboard.setVisibility(GONE);
+        }
+        if(container.getVisibility() == GONE){
+            container.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void showLayout() {
+        if(rlDashboard.getVisibility() == GONE){
+            rlDashboard.setVisibility(View.VISIBLE);
+        }
+        if(container.getVisibility() == View.VISIBLE){
+            container.setVisibility(GONE);
+        }
+    }
+
+    private void gotoRegistrationForm() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, new RegistrationFragment())
+                .commit();
+    }
+
+    private void setupPreference() {
+        registerPreference = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+    }
+
+    private void setupDatabase() {
+        dbHelper = new WorkoutDBHelper(this);
+        mDatabase = dbHelper.getWritableDatabase();
+    }
+
+    private void setupAdapter() {
+        adapter = new RecordAdapter(this, recordList);
+    }
 
     private void setupToolbar() {
         setSupportActionBar(toolbar);
@@ -91,22 +142,19 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
                 if(!getSupportActionBar().isShowing()) {
                     getSupportActionBar().show();
                 }
-                fm.beginTransaction().hide(active).show(dashboardFragment).commit();
-                active = dashboardFragment;
+                viewPager.setCurrentItem(0);
                 return true;
             case R.id.graphFragment:
                 if(!getSupportActionBar().isShowing()) {
                     getSupportActionBar().show();
                 }
-                fm.beginTransaction().hide(active).show(graphFragment).commit();
-                active = graphFragment;
+                viewPager.setCurrentItem(1);
                 return true;
             case R.id.profileFragment:
                 if(getSupportActionBar().isShowing()) {
                     getSupportActionBar().hide();
                 }
-                fm.beginTransaction().hide(active).show(profileFragment).commit();
-                active = profileFragment;
+                viewPager.setCurrentItem(2);
                 return true;
         }
         return false;
@@ -114,22 +162,15 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
 
     @Override
     public void onBackPressed() {
-        if(!doubleBackPressed) {
-            doubleBackPressed = true;
-            if(!getSupportActionBar().isShowing()) {
-                getSupportActionBar().show();
-            }
-            getSupportFragmentManager().beginTransaction().hide(active).show(dashboardFragment).commit();
-            active = dashboardFragment;
-            new Handler().postDelayed(() -> doubleBackPressed = false, 2000);
-        }else{
+        if(bottomNavigationView.getSelectedItemId() == R.id.dashboardFragment){
             super.onBackPressed();
+        }else{
+            bottomNavigationView.setSelectedItemId(R.id.dashboardFragment);
         }
     }
 
 
     public void getAllData() {
-
         Cursor cursor = mDatabase.query(UserContract.WorkoutEntry.TABLE_NAME,
                 null,
                 null,
@@ -139,13 +180,14 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
                 null);
 
         while (cursor.moveToNext()) {
-            String date = cursor.getString(cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_DATE));
-            String steps = cursor.getString(cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_STEPS));
-
-
+            String date = cursor.getString(
+                    cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_DATE)
+            );
+            String steps = cursor.getString(
+                    cursor.getColumnIndexOrThrow(UserContract.WorkoutEntry.COLUMN_STEPS)
+            );
             recordList.add(new Record(date, Long.valueOf(steps)));
         }
-
     }
 
     @Override
@@ -153,5 +195,6 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationV
         dbHelper.close();
         super.onPause();
     }
+
 }
 

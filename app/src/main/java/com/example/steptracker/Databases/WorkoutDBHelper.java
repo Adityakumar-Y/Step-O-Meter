@@ -3,16 +3,22 @@ package com.example.steptracker.Databases;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 
 import com.example.steptracker.Contracts.UserContract.WorkoutEntry;
+
+import java.io.File;
 
 public class WorkoutDBHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "UserWorkout.db";
     public static final int DATABASE_VERSION = 1;
+    private static final String FILE_DIR = "Step-O-Meter";
 
     public WorkoutDBHelper(Context context){
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context, Environment.getExternalStorageDirectory()
+                + File.separator + FILE_DIR
+                + File.separator +DATABASE_NAME, null, DATABASE_VERSION);
     }
 
 
